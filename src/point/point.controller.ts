@@ -1,16 +1,23 @@
-import { Body, Controller, Get, Param, Patch, ValidationPipe } from "@nestjs/common";
-import { PointHistory, TransactionType, UserPoint } from "./point.model";
-import { UserPointTable } from "src/database/userpoint.table";
-import { PointHistoryTable } from "src/database/pointhistory.table";
-import { PointBody as PointDto } from "./point.dto";
-
+import {
+    Body,
+    Controller,
+    Get,
+    Param,
+    Patch,
+    ValidationPipe,
+} from '@nestjs/common';
+import { PointHistory, UserPoint } from './point.model';
+import { UserPointTable } from '../database/userpoint.table';
+import { PointHistoryTable } from '../database/pointhistory.table';
+import { PointBody as PointDto } from './point.dto';
+import { PointService } from './point.service';
 
 @Controller('/point')
 export class PointController {
-
     constructor(
         private readonly userDb: UserPointTable,
         private readonly historyDb: PointHistoryTable,
+        private pointService: PointService,
     ) {}
 
     /**
@@ -18,8 +25,8 @@ export class PointController {
      */
     @Get(':id')
     async point(@Param('id') id): Promise<UserPoint> {
-        const userId = Number.parseInt(id)
-        return { id: userId, point: 0, updateMillis: Date.now() }
+        this.checkUserId(id);
+        return this.pointService.getUserPoint(Number.parseInt(id));
     }
 
     /**
@@ -27,8 +34,8 @@ export class PointController {
      */
     @Get(':id/histories')
     async history(@Param('id') id): Promise<PointHistory[]> {
-        const userId = Number.parseInt(id)
-        return []
+        this.checkUserId(id);
+        return this.pointService.getUserPointHistories(Number.parseInt(id));
     }
 
     /**
@@ -39,9 +46,12 @@ export class PointController {
         @Param('id') id,
         @Body(ValidationPipe) pointDto: PointDto,
     ): Promise<UserPoint> {
-        const userId = Number.parseInt(id)
-        const amount = pointDto.amount
-        return { id: userId, point: amount, updateMillis: Date.now() }
+        this.checkUserId(id);
+
+        return this.pointService.chargeUserPoint(
+            Number.parseInt(id),
+            pointDto.amount,
+        );
     }
 
     /**
@@ -52,8 +62,18 @@ export class PointController {
         @Param('id') id,
         @Body(ValidationPipe) pointDto: PointDto,
     ): Promise<UserPoint> {
-        const userId = Number.parseInt(id)
-        const amount = pointDto.amount
-        return { id: userId, point: amount, updateMillis: Date.now() }
+        this.checkUserId(id);
+
+        return this.pointService.useUserPoint(
+            Number.parseInt(id),
+            pointDto.amount,
+        );
+    }
+
+    // 사용자ID 값 검사
+    private checkUserId(id: string) {
+        if (isNaN(Number(id))) {
+            throw new Error('올바르지 않은 ID 값 입니다.');
+        }
     }
 }
