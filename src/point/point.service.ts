@@ -37,7 +37,7 @@ export class PointService {
             Date.now(),
         );
 
-        return this.getUserPoint(id);
+        return await this.getUserPoint(id);
     }
     // 포인트 사용
     async useUserPoint(id: number, amount: number): Promise<UserPoint> {
@@ -63,32 +63,6 @@ export class PointService {
             Date.now(),
         );
 
-        return this.getUserPoint(id);
-    }
-
-    async changeUserPoint(
-        id: number,
-        amount: number,
-        transactionType: TransactionType,
-    ): Promise<UserPoint> {
-        const userPoint: UserPoint = await this.getUserPoint(id);
-
-        const totalPoint: number = userPoint.point + amount;
-
-        if (transactionType === TransactionType.USE && userPoint.point <= 0) {
-            throw new Error('사용가능한 포인트가 없습니다.');
-        } else if (totalPoint < 0) {
-            throw new Error('포인트 잔액이 부족합니다.');
-        }
-
-        await this.userDb.insertOrUpdate(userPoint.id, totalPoint);
-        await this.historyDb.insert(
-            userPoint.id,
-            amount,
-            transactionType,
-            Date.now(),
-        );
-
-        return this.getUserPoint(id);
+        return await this.getUserPoint(id);
     }
 }

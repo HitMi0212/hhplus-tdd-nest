@@ -20,6 +20,11 @@ export class PointController {
         private pointService: PointService,
     ) {}
 
+    private readonly userPointPromiseMap = new Map<
+        number,
+        Promise<UserPoint>
+    >();
+
     /**
      * TODO - 특정 유저의 포인트를 조회하는 기능을 작성해주세요.
      */
@@ -48,10 +53,19 @@ export class PointController {
     ): Promise<UserPoint> {
         this.checkUserId(id);
 
-        return this.pointService.chargeUserPoint(
-            Number.parseInt(id),
-            pointDto.amount,
-        );
+        const lastPromise =
+            this.userPointPromiseMap.get(id) || Promise.resolve();
+
+        const newPromise = lastPromise.then(async () => {
+            return await this.pointService.chargeUserPoint(
+                Number.parseInt(id),
+                pointDto.amount,
+            );
+        });
+
+        this.userPointPromiseMap.set(id, newPromise);
+
+        return newPromise;
     }
 
     /**
@@ -64,10 +78,19 @@ export class PointController {
     ): Promise<UserPoint> {
         this.checkUserId(id);
 
-        return this.pointService.useUserPoint(
-            Number.parseInt(id),
-            pointDto.amount,
-        );
+        const lastPromise =
+            this.userPointPromiseMap.get(id) || Promise.resolve();
+
+        const newPromise = lastPromise.then(async () => {
+            return await this.pointService.useUserPoint(
+                Number.parseInt(id),
+                pointDto.amount,
+            );
+        });
+
+        this.userPointPromiseMap.set(id, newPromise);
+
+        return newPromise;
     }
 
     // 사용자ID 값 검사
